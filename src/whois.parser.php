@@ -339,7 +339,7 @@ if (!$items)
                 'Zone Email:' => 'zone.email'
 		            );
 
-$r = '';
+$r = array();
 $disok = true;
 
 while (list($key,$val) = each($rawdata))
