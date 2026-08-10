@@ -43,28 +43,31 @@ class nu_handler
                   'handle' => 'Record ID:'
 		              );
 
-		while (list($key, $val) = each($data_str['rawdata']))
-			{
-			$val = trim($val);
+			$rawdata = $data_str['rawdata'];
+			$raw_count = count($rawdata);
 
-			if ($val != '')
+			for ($idx = 0; $idx < $raw_count; $idx++)
 				{
-				if ($val == 'Domain servers in listed order:')
+				$val = trim($rawdata[$idx]);
+
+				if ($val != '')
 					{
-					while (list($key, $val) = each($data_str['rawdata']))
+					if ($val == 'Domain servers in listed order:')
 						{
-						$val = trim($val);
-						if ($val == '')
-							break;
-						$r['regrinfo']['domain']['nserver'][] = $val;
-						}
-					break;
+						for ($idx++; $idx < $raw_count; $idx++)
+							{
+							$val = trim($rawdata[$idx]);
+							if ($val == '')
+								break;
+							$r['regrinfo']['domain']['nserver'][] = $val;
+							}
+						break;
 					}
 
 				reset($items);
 
-				while (list($field, $match) = each($items))
-				if (strstr($val, $match))
+					foreach ($items as $field => $match)
+					if (strstr($val, $match))
 					{
 					$r['regrinfo']['domain'][$field] = trim(substr($val, strlen($match)));
 					break;

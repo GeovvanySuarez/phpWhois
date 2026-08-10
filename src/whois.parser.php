@@ -43,7 +43,7 @@ if (empty($blocks) || !is_array($blocks['main']))
 $r = $blocks['main'];
 $ret['registered'] = 'yes';
 
-while (list($key,$val) = each($contacts))
+foreach ($contacts as $key => $val)
 	if (isset($r[$key]))
 		{
 		if (is_array($r[$key]))
@@ -74,7 +74,7 @@ $blocks = false;
 $gkey = 'main';
 $dend = false;
 
-while (list($key,$val)=each($rawdata))
+foreach ($rawdata as $key => $val)
 	{
 	$val=trim($val);
 
@@ -342,8 +342,8 @@ if (!$items)
 $r = array();
 $disok = true;
 
-while (list($key,$val) = each($rawdata))
-	{
+foreach ($rawdata as $key => $val)
+		{
 	if (trim($val) != '')
 		{
 	     if (($val[0]=='%' || $val[0]=='#') && $disok)
@@ -356,7 +356,7 @@ while (list($key,$val) = each($rawdata))
 		$disok = false;
 		reset($items);
 
-		while (list($match, $field)=each($items))
+		foreach ($items as $match => $field)
 			{
 			$pos = strpos($val,$match);
 
@@ -414,113 +414,116 @@ function get_blocks ( $rawdata, $items, $partial_match = false, $def_block = fal
 $r = array();
 $endtag = '';
 
-while (list($key,$val) = each($rawdata))
-	{
-	$val = trim($val);
-	if ($val == '') continue;
+	$rawdata = array_values($rawdata);
+	$raw_count = count($rawdata);
 
-	$var = $found = false;
-
-	foreach ($items as $field => $match)
+	for ($idx = 0; $idx < $raw_count; $idx++)
 		{
-		$pos = strpos($val,$match);
+		$val = trim($rawdata[$idx]);
+		if ($val == '') continue;
 
-		if ($field != '' && $pos !== false)
+		$var = $found = false;
+
+		foreach ($items as $field => $match)
 			{
-			if ($val == $match)
+			$pos = strpos($val,$match);
+
+			if ($field != '' && $pos !== false)
 				{
-				$found = true;
-				$endtag = '';
-				$line = $val;
-				break;
-				}
-
-			$last = substr($val,-1,1);
-
-			if ($last == ':' || $last == '-' || $last == ']')
-				{
-				$found = true;
-				$endtag = $last;
-				$line = $val;
-				}
-			else
-				{
-				$var = getvarname(strtok($field,'#'));
-				$itm = trim(substr($val,$pos+strlen($match)));
-				eval('$r'.$var.'=$itm;');
-				}
-
-			break;
-			}
-		}
-
-	if (!$found)
-		{
-		if (!$var && $def_block) $r[$def_block][] = $val;
-		continue;
-		}
-
-	$block = array();
-
-	// Block found, get data ...
-
-	while (list($key,$val) = each($rawdata))
-		{
-		$val = trim($val);
-
-		if ($val == '' || $val == str_repeat($val[0],strlen($val))) continue;
-
-		$last = substr($val,-1,1);
-/*
-		if ($last == $endtag)
-			{
-			// Another block found
-			prev($rawdata);
-			break;
-			}
-
-		if ($endtag == '' || $partial_match)
-		*/
-		if ($endtag == '' || $partial_match || $last == $endtag)
-			{
-			//Check if this line starts another block
-			$et = false;
-
-			foreach ($items as $field => $match)
-				{
-				$pos = strpos($val,$match);
-
-				if ($pos !== false && $pos == 0)
+				if ($val == $match)
 					{
-					$et = true;
+					$found = true;
+					$endtag = '';
+					$line = $val;
 					break;
 					}
-				}
 
-			if ($et)
+				$last = substr($val,-1,1);
+
+				if ($last == ':' || $last == '-' || $last == ']')
+					{
+					$found = true;
+					$endtag = $last;
+					$line = $val;
+					}
+				else
+					{
+					$var = getvarname(strtok($field,'#'));
+					$itm = trim(substr($val,$pos+strlen($match)));
+					eval('$r'.$var.'=$itm;');
+					}
+
+				break;
+				}
+			}
+
+		if (!$found)
+			{
+			if (!$var && $def_block) $r[$def_block][] = $val;
+			continue;
+			}
+
+		$block = array();
+
+		// Block found, get data ...
+
+		for ($idx++; $idx < $raw_count; $idx++)
+			{
+			$val = trim($rawdata[$idx]);
+
+			if ($val == '' || $val == str_repeat($val[0],strlen($val))) continue;
+
+			$last = substr($val,-1,1);
+/*
+			if ($last == $endtag)
 				{
 				// Another block found
 				prev($rawdata);
 				break;
 				}
+
+			if ($endtag == '' || $partial_match)
+			*/
+			if ($endtag == '' || $partial_match || $last == $endtag)
+				{
+				//Check if this line starts another block
+				$et = false;
+
+				foreach ($items as $field => $match)
+					{
+					$pos = strpos($val,$match);
+
+					if ($pos !== false && $pos == 0)
+						{
+						$et = true;
+						break;
+						}
+					}
+
+				if ($et)
+					{
+					// Another block found
+					$idx--;
+					break;
+					}
+				}
+
+			$block[] = $val;
 			}
 
-		$block[] = $val;
-		}
+		if (empty($block)) continue;
 
-	if (empty($block)) continue;
-
-	foreach ($items as $field => $match)
-		{
-		$pos = strpos($line,$match);
-
-		if ($pos !== false)
+		foreach ($items as $field => $match)
 			{
-			$var = getvarname(strtok($field,'#'));
-			if ($var != '[]') eval('$r'.$var.'=$block;');
+			$pos = strpos($line,$match);
+
+			if ($pos !== false)
+				{
+				$var = getvarname(strtok($field,'#'));
+				if ($var != '[]') eval('$r'.$var.'=$block;');
+				}
 			}
 		}
-	}
 
 return $r;
 }
@@ -610,7 +613,7 @@ if ($extra_items)
 	$items = $extra_items;
 	}
 
-while (list($key,$val)=each($array))
+foreach ($array as $key => $val)
 	{
 	$ok=true;
 
@@ -619,7 +622,7 @@ while (list($key,$val)=each($array))
 		reset($items);
 		$ok = false;
 
-		while (list($match,$field) = each($items))
+		foreach ($items as $match => $field)
 			{
 			$pos = strpos(strtolower($val),$match);
 
@@ -834,8 +837,8 @@ while (!$ok)
 	reset($res);
 	$ok = true;
 
-	while (list($key, $val) = each($res))
-		{
+	foreach ($res as $key => $val)
+			{
 		if ($val == '' || $key == '') continue;
 
 		if (!is_numeric($val) && isset($months[substr(strtolower($val),0,3)]))

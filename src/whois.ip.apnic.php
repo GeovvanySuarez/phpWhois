@@ -74,8 +74,8 @@ class apnic_handler
 
 			$r['registered'] = 'yes';
 
-			while (list($key,$val) = each($contacts))
-				if (isset($rb[$key]))
+				foreach ($contacts as $key => $val)
+					if (isset($rb[$key]))
 					{
 					if (is_array($rb[$key]))
 						$blk = $rb[$key][count($rb[$key])-1];
